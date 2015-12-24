@@ -15,7 +15,7 @@ function [ out ] = subdivide(vertices, d_at_vertices, h )
 %
 %   h > 0  width of band 
 %
-%
+% Systematically checks the following cases:
 %
 % (4out 0edge 0in)  returns 0 sub-tetrahedra
 % (3out 1edge 0in)  returns 0 sub-tetrahedra
@@ -31,6 +31,23 @@ function [ out ] = subdivide(vertices, d_at_vertices, h )
 % (0out 2edge 2in)  returns 1 sub-tetrahedra
 % (0out 1edge 3in)  returns 1 sub-tetrahedra
 % (0out 0edge 4in)  returns 1 sub-tetrahedra
+%
+%  In a few cases we end up with a prism shape which needs to be subdivided
+%  into 3 tetrahedra.  We use the following pattern of subdivision although
+%  the final list of 4 vertices does not have a specific order. (We do not
+%  fill in all the lines of each subtetrahedra due to graphical
+%  difficulties :) but you get the idea)
+%
+%   1-----3      1            1            1-----3
+%   |\   /|      |             \            \   /|
+%   | \ / |  =>  |              \            \ / |
+%   |  2  |      |               2            2  |
+%   |  |  |      |               |               |
+%   4  |  6      4-----6         |  6            6
+%    \ | /        \   /          | /        
+%     \|/          \ /           |/         
+%      5            5            5          
+%               [1 4 5 6]    [1 2 5 6]    [1 2 3 6]
 %
 % Spencer Patty
 % Dec 23, 2015
@@ -52,8 +69,14 @@ num_out = sum( (abs_d_at_xi > h) );
 % array of vertices of the ith subdivided tetrahedron. For example,
 % out{i}(:,3) would be the z coordinates of the ith sub-tetrahedron.
 
-if (num_in == 0)  % covers (4out 0edge 0in) and (3out 1edge 0in)
+if (num_in == 0)  %(4out 0edge 0in), (3out 1edge 0in), (2out 2edge 0in), (1out 3edge 0in)
     out = {};
+    return;
+end
+
+if (num_out == 0) %(0out 0edge 4in), (0out 1edge 3in), (0out 2edge 2in), (0out 3edge 1in)
+    out = cell(1,1);
+    out(1) = {xi};
     return;
 end
 
@@ -109,11 +132,6 @@ if (num_out == 1)
     end
 end
 
-if (num_out == 0) %(0out 0edge 4in), (0out 1edge 3in), (0out 2edge 2in), (0out 3edge 1in)
-    out = cell(1,1);
-    out(1) = {xi};
-    return;
-end
 
 end
 

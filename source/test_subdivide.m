@@ -17,29 +17,29 @@
 %
 % The following scenarios are tested:
 %
-% (4out 0edge 0in)  returns 0
-% (3out 1edge 0in)  returns 0
-% (3out 0edge 1in)  returns 1
-% (2out 2edge 0in)  returns 0
-% (2out 1edge 1in)  returns 1
-% (2out 0edge 2in)  returns 3
-% (1out 3edge 0in)  returns 0
-% (1out 2edge 1in)  returns 1
-% (1out 1edge 2in)  returns 2
-% (1out 0edge 3in)  returns 3
-% (0out 3edge 1in)  returns 1
-% (0out 2edge 2in)  returns 1
-% (0out 1edge 3in)  returns 1
-% (0out 0edge 4in)  returns 1 
+% (4out 0edge 0in)  returns 0 sub-tetrahedra
+% (3out 1edge 0in)  returns 0 sub-tetrahedra
+% (3out 0edge 1in)  returns 1 sub-tetrahedra
+% (2out 2edge 0in)  returns 0 sub-tetrahedra
+% (2out 1edge 1in)  returns 1 sub-tetrahedra
+% (2out 0edge 2in)  returns 3 sub-tetrahedra
+% (1out 3edge 0in)  returns 0 sub-tetrahedra
+% (1out 2edge 1in)  returns 1 sub-tetrahedra
+% (1out 1edge 2in)  returns 2 sub-tetrahedra
+% (1out 0edge 3in)  returns 3 sub-tetrahedra
+% (0out 3edge 1in)  returns 1 sub-tetrahedra
+% (0out 2edge 2in)  returns 1 sub-tetrahedra
+% (0out 1edge 3in)  returns 1 sub-tetrahedra
+% (0out 0edge 4in)  returns 1 sub-tetrahedra
 %
-% and then a uniform random generator on d\in [0,2*h] is also provided to
+% and then a uniform random generator on d\in [0,2h] and [-2h,0] is also provided to
 % test all sorts of cases and see the many possibilities of subdivisions
 %
 % The test cases are all specified on the standard reference element
 % tetrahedron called vertices here.
 
 vertices = [[0;0;0], [1;0;0], [0;1;0], [0;0;1]]; 
-h = 1;
+h = 1; % don't change from h=1
 
 
 %% test random values of d positive
