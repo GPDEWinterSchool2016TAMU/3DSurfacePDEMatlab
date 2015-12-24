@@ -1,21 +1,42 @@
 function [out] = subdivide_error(vertices, d_at_vertices)
+%  This function extracts from a testrahedra T, the intersection with
+%  \Gamma_h = { \x | d_h(x) = 0 }  where d_h is a linear interpolant of the
+%  distance function d(x).  The intersection is returned as a set of
+%  triangular faces where there are between 0 and 2 possible faces
+%  depending on how Gamma_h intersects T.  We are passed a
+%  vector of distance function values d_h(vi) at the four vertices of T
+%  which is sufficient (because we are linear) to determine T\cap Gamma_h.
 %
+%                                          [vi_x]
+%   vertices = [v1, v2, v3, v4]  with vi = [vi_y] column vectors
+%                                          [vi_z]
 %
-% (4p 0gamma 0m)  returns 0 faces
-% (3p 1gamma 0m)  returns 0 faces
-% (3p 0gamma 1m)  returns 1 faces
-% (2p 2gamma 0m)  returns 0 faces
-% (2p 1gamma 1m)  returns 1 faces
-% (2p 0gamma 2m)  returns 2 faces
-% (1p 3gamma 0m)  returns 1 faces
-% (1p 2gamma 1m)  returns 1 faces
-% (1p 1gamma 2m)  returns 1 faces
-% (1p 0gamma 3m)  returns 1 faces
-% (0p 3gamma 1m)  returns 1 faces
-% (0p 2gamma 2m)  returns 0 faces
-% (0p 1gamma 3m)  returns 0 faces
-% (0p 0gamma 4m)  returns 0 faces
+%   d_at_vertices = [d1, d2, d3, d4]  with di = d_h(vi) distance value
 %
+%   out is a cell array of size 1xm  (0<=m<=2) where there are m faces 
+%   returned on T \cap Gamma_h.  Each element of the cell array represents 
+%   a face as a set of three vertices [fv1,fv2,fv3].  For example, the 2nd
+%   face 3rd vertex would be reference as out{2}(:,3).
+%
+% Systematically checks the following cases:
+%
+% (4p 0gamma 0m)  returns 0 face(s)
+% (3p 1gamma 0m)  returns 0 face(s)
+% (3p 0gamma 1m)  returns 1 face(s)
+% (2p 2gamma 0m)  returns 0 face(s)
+% (2p 1gamma 1m)  returns 1 face(s)
+% (2p 0gamma 2m)  returns 2 face(s)
+% (1p 3gamma 0m)  returns 1 face(s)
+% (1p 2gamma 1m)  returns 1 face(s)
+% (1p 1gamma 2m)  returns 1 face(s)
+% (1p 0gamma 3m)  returns 1 face(s)
+% (0p 3gamma 1m)  returns 1 face(s)
+% (0p 2gamma 2m)  returns 0 face(s)
+% (0p 1gamma 3m)  returns 0 face(s)
+% (0p 0gamma 4m)  returns 0 face(s)
+%
+%  Spencer Patty
+%  Dec 24, 2015
 
 % reorder vertices so that they are listed ( m | gamma | p )
 [d_at_xi, I] = sort(d_at_vertices);

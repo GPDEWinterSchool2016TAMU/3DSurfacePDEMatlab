@@ -1,7 +1,4 @@
-% test_subdivide_error_error.m
-%
-% Spencer Patty
-% Dec 23, 2015
+% test_subdivide_error.m
 %
 % This test file contains at least one test for every possible scenario of
 % nodes inside on the gamma or outside the band D_h = {x | |d_h(x)| < h } 
@@ -17,34 +14,36 @@
 %
 % The following scenarios are tested:
 %
-% (4p 0gamma 0m)  returns 0 faces
-% (3p 1gamma 0m)  returns 0 faces
-% (3p 0gamma 1m)  returns 1 faces
-% (2p 2gamma 0m)  returns 0 faces
-% (2p 1gamma 1m)  returns 1 faces
-% (2p 0gamma 2m)  returns 2 faces
-% (1p 3gamma 0m)  returns 1 faces
-% (1p 2gamma 1m)  returns 1 faces
-% (1p 1gamma 2m)  returns 1 faces
-% (1p 0gamma 3m)  returns 1 faces
-% (0p 3gamma 1m)  returns 1 faces
-% (0p 2gamma 2m)  returns 0 faces
-% (0p 1gamma 3m)  returns 0 faces
-% (0p 0gamma 4m)  returns 0 faces
+% (4p 0gamma 0m)  returns 0 face(s)
+% (3p 1gamma 0m)  returns 0 face(s)
+% (3p 0gamma 1m)  returns 1 face(s)
+% (2p 2gamma 0m)  returns 0 face(s)
+% (2p 1gamma 1m)  returns 1 face(s)
+% (2p 0gamma 2m)  returns 2 face(s)
+% (1p 3gamma 0m)  returns 1 face(s)
+% (1p 2gamma 1m)  returns 1 face(s)
+% (1p 1gamma 2m)  returns 1 face(s)
+% (1p 0gamma 3m)  returns 1 face(s)
+% (0p 3gamma 1m)  returns 1 face(s)
+% (0p 2gamma 2m)  returns 0 face(s)
+% (0p 1gamma 3m)  returns 0 face(s)
+% (0p 0gamma 4m)  returns 0 face(s)
 %
-% and then a uniform random generator on d\in [0,2*h] is also provided to
+% and then a uniform random generator on d\in [-h,h] is also provided to
 % test all sorts of cases and see the many possibilities of subfaces
 %
 % The test cases are all specified on the standard reference element
 % tetrahedron called vertices here.
+%
+% Spencer Patty
+% Dec 23, 2015
 
-vertices = [[0;0;0], [1;0;0], [0;1;0], [0;0;1]]; 
-
-h=1;
+vertices = [[0;0;0], [1;0;0], [0;1;0], [0;0;1]];  
 
 %% test random values
 
-d_at_vertices = -h + 2*h*rand(1,4)  % generate random numbers from uniform [-h,h]
+h=1; % generate random numbers from uniform [-h,h]
+d_at_vertices = -h + 2*h*rand(1,4)  
 subface = subdivide_error(vertices, d_at_vertices);
 colors = {'red','blue','green'};
 i=1; 
@@ -82,8 +81,7 @@ subface = subdivide_error(vertices, d_at_vertices);
 %% test (2p 1gamma 1m)
 
 d_at_vertices = [-1, 0, 1, 1];
-t = sqrt(2)*abs(2-h)/(abs(2-h)+abs(0-h));
-compare = {[[0;0;0], [1;0;0], [0;0.5;0]]}; 
+compare = {[[0;0;0.5], [1;0;0], [0;0.5;0]]}; 
 subface = subdivide_error(vertices, d_at_vertices);
 compare{1}
 clf
@@ -93,8 +91,8 @@ plot_face(subface{1},vertices,'red');
 
 d_at_vertices = [1, -1, 1, -1];
 t = sqrt(2)*abs(2-h)/(abs(2-h)+abs(0-h));
-compare = {[[0;0;0.5], [0;0.5;0], [0;0;0.5]],...
-           [[0;0;0.5], [1.0;0;0], [0;0;0.5]]}; 
+compare = {[[0;0;0.5], [0.5;0;0], [0.5;0.5;0]],...
+           [[0;0;0.5], [0;0.5;0.5], [0.5;0.5;0]]}; 
 subface = subdivide_error(vertices, d_at_vertices);
 compare{1}
 compare{2}
@@ -143,7 +141,7 @@ plot_face(subface{1},vertices,'red');
 %% test (0p 3gamma 1m)
 
 d_at_vertices = [0, 0, -1, 0];
-compare = {[[0;0;0], [1;0;0], [0;1;0]]}; 
+compare = {[[0;0;0], [1;0;0], [0;0;1]]}; 
 subface = subdivide_error(vertices, d_at_vertices);
 compare{1}
 clf

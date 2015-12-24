@@ -19,10 +19,7 @@ else % find d(xij) = -h
 end
 
 % Assert 0 <= t <= 1  so that xij lies between xi and xj
-
 xij = xj + t*(xi-xj);
-
-
 return;
 
 end
