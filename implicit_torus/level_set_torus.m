@@ -1,8 +1,8 @@
-clear all; clc;
+clear all; close all; clc; 
 format long;
 
 % mesh size
-n=8; h=4./n;  
+n=32; h=4./n;  
 
 % quadrature degree of accuracy
 quad_degree_bulk = 2; % for tetrahedra
@@ -50,4 +50,8 @@ sol=A\F;
 % compute error of solution
 fprintf('...Computing L2(Gamma_h) Error...\n')
 error_L2_Gamma_h = compute_error_L2_Gamma_h(sol,nb_node,nb_ele,n_nb_ele,quad_degree_face)
+
+
+% plotting solution on Gamma_h
+plot_solution_on_Gamma_h(sol,nb_node,nb_ele,n_nb_ele,0);
 
