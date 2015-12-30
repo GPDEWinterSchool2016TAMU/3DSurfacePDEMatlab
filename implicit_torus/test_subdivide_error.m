@@ -38,7 +38,7 @@
 % Spencer Patty
 % Dec 23, 2015
 
-vertices = [[0;0;0], [1;0;0], [0;1;0], [0;0;1]];  
+vertices = [[0,0,0]; [1,0,0]; [0,1,0]; [0,0,1]];  
 
 %% test random values
 

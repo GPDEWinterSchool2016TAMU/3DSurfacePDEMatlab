@@ -38,7 +38,7 @@
 % The test cases are all specified on the standard reference element
 % tetrahedron called vertices here.
 
-vertices = [[0;0;0], [1;0;0], [0;1;0], [0;0;1]]; 
+vertices = [[0,0,0]; [1,0,0]; [0,1,0]; [0,0,1]];  
 h = 1; % don't change from h=1
 
 

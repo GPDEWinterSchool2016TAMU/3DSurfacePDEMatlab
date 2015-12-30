@@ -7,9 +7,7 @@ function [ out ] = subdivide(vertices, d_at_vertices, h )
 %   it is sufficient to give the 4 values di = d_h(vi) to determine where 
 %   the cuts need to be made.
 %
-%                                          [vi_x]
-%   vertices = [v1, v2, v3, v4]  with vi = [vi_y] column vectors
-%                                          [vi_z]
+%   vertices = [v1; v2; v3; v4]  with vi = [vi_x, vi_y, vi_z] row vectors
 %
 %   d_at_vertices = [d1, d2, d3, d4]  with di = d_h(vi) distance value
 %
@@ -17,8 +15,8 @@ function [ out ] = subdivide(vertices, d_at_vertices, h )
 %
 %   out is a cell array of size 1xm where there are m subtetrahedra 
 %   returned ( = {} if m=0 ).  Each element of the cell array is a set of
-%   four vertices of the subtetrahedra, [sv1, sv2, sv3, sv4].  For example
-%   out{i}(:,3) would be the 3rd vertex of the ith subtetrahedron.
+%   four vertices of the subtetrahedra, [sv1; sv2; sv3; sv4].  For example
+%   out{i}(3,:) would be the 3rd vertex of the ith subtetrahedron.
 %
 % Systematically checks the following cases:
 %
@@ -75,7 +73,7 @@ function [ out ] = subdivide(vertices, d_at_vertices, h )
 %                                         
 % reorder vertices so that they are listed ( in | edge | out )
 [abs_d_at_xi, I] = sort(abs(d_at_vertices));
-xi = vertices(:,I);  di = d_at_vertices(I);
+xi = vertices(I,:);  di = d_at_vertices(I);
 
 % calculate which case we are in
 num_in  = sum( (abs_d_at_xi < h) );
@@ -97,53 +95,53 @@ if (num_out == 0) %(4in 0edge 0out), (3in 1edge 0out), (2in 2edge 0out), (1in 3e
 end
 
 if (num_out == 3) %(1in 0edge 3out)
-    x12 = find_xij(xi(:,1),xi(:,2), di(1), di(2), h); 
-    x13 = find_xij(xi(:,1),xi(:,3), di(1), di(3), h);
-    x14 = find_xij(xi(:,1),xi(:,4), di(1), di(4), h);
+    x12 = find_xij(xi(1,:),xi(2,:), di(1), di(2), h); 
+    x13 = find_xij(xi(1,:),xi(3,:), di(1), di(3), h);
+    x14 = find_xij(xi(1,:),xi(4,:), di(1), di(4), h);
     out = cell(1,1);
-    out(1) = {[xi(:,1), x12, x13, x14]};
+    out(1) = {[xi(1,:); x12; x13; x14]};
     return;
 end
 
 if (num_out == 2)
-    x13 = find_xij(xi(:,1),xi(:,3), di(1), di(3), h);
-    x14 = find_xij(xi(:,1),xi(:,4), di(1), di(4), h);
+    x13 = find_xij(xi(1,:),xi(3,:), di(1), di(3), h);
+    x14 = find_xij(xi(1,:),xi(4,:), di(1), di(4), h);
     if (num_in == 1) %(1in 1edge 2out)
         out = cell(1,1);
-        out(1) = {[xi(:,1), xi(:,2), x13, x14]};
+        out(1) = {[xi(1,:); xi(2,:); x13; x14]};
         return;
     else % (2in 0edge 2out)
-        x23 = find_xij(xi(:,2),xi(:,3), di(2), di(3), h);
-        x24 = find_xij(xi(:,2),xi(:,4), di(2), di(4), h);
+        x23 = find_xij(xi(2,:),xi(3,:), di(2), di(3), h);
+        x24 = find_xij(xi(2,:),xi(4,:), di(2), di(4), h);
         out = cell(1,3);
-        out(1) = {[xi(:,1), x13,     x14, x23]};
-        out(2) = {[xi(:,1), xi(:,2), x14, x23]};
-        out(3) = {[x24,     xi(:,2), x14, x23]};
+        out(1) = {[xi(1,:); x13;     x14; x23]};
+        out(2) = {[xi(1,:); xi(2,:); x14; x23]};
+        out(3) = {[x24;     xi(2,:); x14; x23]};
         return;
     end
 end
 
 if (num_out == 1)
     if(num_in == 3) %(3in 0edge 1out)
-        x14 = find_xij(xi(:,1),xi(:,4), di(1), di(4), h);
-        x24 = find_xij(xi(:,2),xi(:,4), di(2), di(4), h);
-        x34 = find_xij(xi(:,3),xi(:,4), di(3), di(4), h);
+        x14 = find_xij(xi(1,:),xi(4,:), di(1), di(4), h);
+        x24 = find_xij(xi(2,:),xi(4,:), di(2), di(4), h);
+        x34 = find_xij(xi(3,:),xi(4,:), di(3), di(4), h);
         out = cell(1,3);
-        out(1) = {[xi(:,1), xi(:,2), xi(:,3),  x34]};
-        out(2) = {[xi(:,1), xi(:,2), x14,      x34]};
-        out(3) = {[x24,     xi(:,2), x14,      x34]};
+        out(1) = {[xi(1,:); xi(2,:); xi(3,:);  x34]};
+        out(2) = {[xi(1,:); xi(2,:); x14;      x34]};
+        out(3) = {[x24;     xi(2,:); x14;      x34]};
         return;
     elseif(num_in == 2) %(2in 1edge 1out)
-        x14 = find_xij(xi(:,1),xi(:,4), di(1), di(4), h);
-        x24 = find_xij(xi(:,2),xi(:,4), di(2), di(4), h);
+        x14 = find_xij(xi(1,:),xi(4,:), di(1), di(4), h);
+        x24 = find_xij(xi(2,:),xi(4,:), di(2), di(4), h);
         out = cell(1,2);
-        out(1) = {[xi(:,1), x24, xi(:,3), x14    ]};
-        out(2) = {[xi(:,1), x24, xi(:,2), xi(:,3)]};
+        out(1) = {[xi(1,:); x24; xi(3,:); x14    ]};
+        out(2) = {[xi(1,:); x24; xi(2,:); xi(3,:)]};
         return;
     else %(1in 2edge 1out)
-        x14 = find_xij(xi(:,1),xi(:,4), di(1), di(4), h);
+        x14 = find_xij(xi(1,:),xi(4,:), di(1), di(4), h);
         out = cell(1,1);
-        out(1) = {[xi(:,1), xi(:,2), xi(:,3),  x14]};
+        out(1) = {[xi(1,:); xi(2,:); xi(3,:);  x14]};
         return;
     end
 end

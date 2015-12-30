@@ -1,5 +1,5 @@
-function vals = eval_basis_value (x,i,v)
-% Return ith shape value (linear element) on the point x.
+function [vals, grads] = eval_basis_value_grad (x,i,v)
+% Return ith shape value and gradient (linear element) on the point x.
 % Note that the input argument v is a 4 by 3 matrix
 % and jth row of v indicates the coordinates of jth vertex
 % in this cell.
@@ -10,8 +10,8 @@ function vals = eval_basis_value (x,i,v)
 %             at x
 %   v = [4x3] vector of 4 vertex coordinates in R^3
 % output:
-%   vals = [nx1] vector of basis function i evaluated at x.
-%
+%   vals  = [nx1] vector of basis function i evaluated at x.
+%   grads = [nx3] vector of basis function gradients i evaluated at x.
 
 ind=[1,2,3,4,1,2,3];
 vec1=v(ind(i+2),:)-v(ind(i+1),:); % [nx3]
@@ -21,8 +21,14 @@ vecx=repmat(x,length(i),1)-v(ind(i+1),:); % [nx3]
 
 cp=cross(vec1,vec2); % [nx3]
 
-% dot product along second dimension to get out [nx1] shape instead of
+% We dot product along second dimension to get out [nx1] shape instead of
 % [1x3] shape.
-vals = dot(vecx,cp,2)./dot(vec3,cp,2); % [nx1] ./ [nx1]
+
+% only do this dot product once
+v3dotcp = dot(vec3,cp,2);
+
+% construct solutions
+vals = dot(vecx,cp,2)./v3dotcp;  % [nx1] ./ [nx1]
+grads = cp./repmat(v3dotcp,1,3); % [nx3] ./ [nx3]
 
 end

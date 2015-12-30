@@ -37,42 +37,60 @@ lstiff=zeros(4,4);
 lrhs=zeros(1,4);
 
 % Loop through the subdivision of the integral domain.
-for subT = subdivide(v',d,h)
+for subT = subdivide(v,d,h)
     
     % Get the quadarature info for each subdivision.
-    points_list = subT{1}'; % extract the vertices
+    points_list = subT{1}; % extract the vertices
     [nq,q,w]=volquad(points_list, quad_degree);
     
     % preallocate rhs values at q
+    % moved function_extension to inside rhs_eval()
     rhs_vals_at_q = rhs_eval(q); % [4x1]
-    
-    % Add the increament for local stiffenss and right hand side on 
+        
+    % Add the increment for local stiffness and right hand side on 
     % each quadrature point.
     for q_point = 1:nq
-        shape_values_at_q_point=zeros(1,4);
-        shape_grads_at_q_point=zeros(4,3);
+        [shape_values_at_q_point, shape_grads_at_q_point] ...
+                 = eval_basis_value_grad(q(q_point,:),1:4,v); % [4x1], [4x3]
+         
+        gls_interp_at_q_point=grad_interp_levelset(shape_grads_at_q_point,d);
         
-        for j = 1:4
-            shape_values_at_q_point(j)=eval_basis_value(q(q_point,:),j,v);
-            shape_grads_at_q_point(j,:)=eval_basis_grad(q(q_point,:),j,v);
-        end
-        gls_interp=grad_interp_levelset(shape_grads_at_q_point,d);
-        for j = 1:4
-            for k = 1:4
-                %
-                % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
-                %
-                lstiff(j,k)=lstiff(j,k)...
-                    +( shape_grads_at_q_point(j,:)*shape_grads_at_q_point(k,:)'...
-                       +shape_values_at_q_point(j)*shape_values_at_q_point(k)...
-                     )*gls_interp*w(q_point);
-            end
-            %
-            % F = \int f*phi_j*|grad I_h d| dx
-            %
-            lrhs(j)=lrhs(j) + rhs_vals_at_q(q_point)*shape_values_at_q_point(j)...
-                                  *gls_interp*w(q_point);
-        end
+        
+        % faster evaluation of local matrix contributions:
+        % inner product the basis values and gradients all at once.
+        shape_val_matrix_at_q_point = shape_values_at_q_point*shape_values_at_q_point'; % [4x1][1x4]
+        shape_grad_matrix_at_q_point = shape_grads_at_q_point*shape_grads_at_q_point'; % [4x3][3x4]
+        
+        %
+        % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
+        %
+        lstiff = lstiff + ( shape_val_matrix_at_q_point ...
+                           + shape_grad_matrix_at_q_point )...
+                           *gls_interp_at_q_point*w(q_point);
+                       
+        %
+        % F = \int f*phi_j*|grad I_h d| dx
+        %       
+        lrhs = lrhs + rhs_vals_at_q(q_point)*shape_values_at_q_point' ... % [1x4]
+                        *gls_interp_at_q_point*w(q_point);
+                    
+%         for j = 1:4
+%             for k = 1:4
+%                 %
+%                 % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
+%                 %
+%                 lstiff(j,k)=lstiff(j,k)...
+%                     +( shape_grads_at_q_point(j,:)*shape_grads_at_q_point(k,:)'...
+%                        +shape_values_at_q_point(j)*shape_values_at_q_point(k)...
+%                      )*gls_interp_at_q_point*w(q_point);
+%             end
+%             %
+%             % F = \int f*phi_j*|grad I_h d| dx
+%             %
+%             lrhs(j)=lrhs(j) + rhs_vals_at_q(q_point)*shape_values_at_q_point(j)...
+%                                   *gls_interp_at_q_point*w(q_point);
+%         end
+
     end
 end
 

@@ -10,32 +10,40 @@ quad_degree_face = 2; % for faces
 
 
 % Mesh generation
-fprintf('Generating Mesh...\n');
-%[n_nb_node,n_nb_ele,nb_node,nb_ele]=bulk_mesh_generator(h);
-[n_nb_node,n_nb_ele,nb_node,nb_ele]=uniform_bulk_mesh(n,h);
+fprintf('...Generating Mesh...\n');
+% [n_nb_node,n_nb_ele,nb_node,nb_ele]=bulk_mesh_generator(h); % unstructure
+[n_nb_node,n_nb_ele,nb_node,nb_ele]=uniform_bulk_mesh(n,h); % structured
 
 % Matrix and vector initialization
-A = spalloc(n_nb_node, n_nb_node, 9*n_nb_ele);
-% A = sparse([],[],[],n_nb_node,n_nb_node,9*n_nb_ele);
+
+% We estimate a maximum of 15 interactions on each row for the uniform mesh
+% case with an average of 13 interactions over all rows .
+%
+% For the tetgen case, a maximum is not calculable, but for h values tested in 
+% [0.0625,1] we have on average 13 interactions. It is probably safe again
+% to use bound 15 but you should be aware that running out of memory
+% will slow you down alot.
+A = spalloc(n_nb_node, n_nb_node, 15*n_nb_node);
+% A = sparse([],[],[],n_nb_node,n_nb_node,15*n_nb_node);
 F = zeros(n_nb_node,1);
 
 % Assembling
-fprintf('Assembling Stiffness Matrix and RHS...\n');
+fprintf('...Assembling Stiffness Matrix and RHS...\n');
 for cell = 1:n_nb_ele
     
-    cell_ind = nb_ele(cell,1:4);     % 1x4
-    vertices = nb_node(cell_ind, :); % 4x3
-    dist_value = distfunc(vertices); % 1x4
+    cell_node_ind = nb_ele(cell,1:4);     % [1x4]
+    vertices = nb_node(cell_node_ind, :); % [4x3]
+    dist_value = distfunc(vertices);      % [1x4]
 
     [ lstiff,lrhs ] = local_assembling( vertices,dist_value,h,quad_degree_bulk );
 
-    A(cell_ind,cell_ind)=A(cell_ind,cell_ind)+lstiff';
-    F(cell_ind)=F(cell_ind)+lrhs';
+    A(cell_node_ind,cell_node_ind) = A(cell_node_ind,cell_node_ind) + lstiff'; %[4x4]
+    F(cell_node_ind) = F(cell_node_ind) + lrhs';  %[4x1]
 
 end
 
 % Apply back slash solver
-fprintf('Solving System...\n')
+fprintf('...Solving System...\n')
 sol=A\F;
 
 % Compute the L2 error i.e.
@@ -48,27 +56,26 @@ sol=A\F;
 % \Gamma_h. The intersection may triangle or quadrilateral. So we cut
 % the quadrilateral by two triangle and apply quadrature rule only on 
 % triangles.
-fprintf('Computing L2(Gamma_h) Error...\n')
+fprintf('...Computing L2(Gamma_h) Error...\n')
 err_square = 0;
 for cell = 1:n_nb_ele
-    % We first get the subdivision of \Gamma_h on this cell.    
-    cell_ind = nb_ele(cell,1:4);     % 1x4
-    vertices = nb_node(cell_ind, :); % 4x3
-    dist_value = distfunc(vertices); % 1x4
-    sol_val_at_vertices_T = sol(cell_ind); % (1x4)^T = 4x1
     
-    for subface = subdivide_error(vertices',dist_value)
+    % extract the info needed to determine if cell interesects Gamma_h and
+    % while we are at it, extract the solution values too.
+    cell_node_ind = nb_ele(cell,1:4);           % [1x4]
+    vertices = nb_node(cell_node_ind, :);       % [4x3]
+    dist_value = distfunc(vertices);            % [1x4]
+    sol_val_at_vertices_T = sol(cell_node_ind); % [4x1]
+    
+    for subface = subdivide_error(vertices,dist_value)
         % get quadrature info
-        points_list=subface{1}'; % extract the face points
-        [nq,q,w]=facequad(points_list, quad_degree_face);
+        v_face=subface{1}; % extract the face points as [fv1; fv2; fv3] ([nx3])
+        [nq,q,w]=facequad(v_face, quad_degree_face);
         exact_at_q = exact(q); % moved function_extension to inside exact() 
         for q_point = 1:nq
-            shape_value=zeros(1,4);
-            for j = 1:4
-                shape_value(j)=eval_basis_value(q(q_point,:),j,vertices);               
-            end
-            err_square=err_square...
-                +(exact_at_q(q_point)-shape_value*sol_val_at_vertices_T)^2.*w(q_point);
+            shape_values_at_q_point = eval_basis_value(q(q_point,:),1:4,vertices); % [4x1]
+            solution_at_q_point = shape_values_at_q_point'*sol_val_at_vertices_T; % [1x4][4x1]
+            err_square=err_square + (exact_at_q(q_point)-solution_at_q_point)^2.*w(q_point);
         end
     end
 end

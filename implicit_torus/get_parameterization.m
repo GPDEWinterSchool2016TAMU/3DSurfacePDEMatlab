@@ -22,7 +22,7 @@ function [ y ] = get_parameterization( p )
 
 r=0.6; R=1.0; % should we make these global parameters or pass them in?
 
-n = length(p);
+[n,~] = size(p);
 
 % initialize size
 y=zeros(n,2);  % nx2
