@@ -1,4 +1,4 @@
-function [ lstiff,lrhs ] = local_assembling( v,d,h )
+function [ lstiff,lrhs ] = local_assembling( v,d,h, quad_degree )
 % Local assembling routine (linear element)
 % for a cell intersects with the narrow band with size h
 %
@@ -6,6 +6,7 @@ function [ lstiff,lrhs ] = local_assembling( v,d,h )
 %   v: vertex list (4 by 4 matrix)
 %   d: distance function evaluation on each vertex (1 by 4 vector)
 %   h: size for narrow band (usually mesh size)
+%   quad_degree: degree of quadrature to apply on each tetrahedra
 % output:
 %   lstiff: local stiffness matrix (4 by 4 for linear case)
 %   lrhs: local right hand side (1 by 4 for linear case)
@@ -27,37 +28,50 @@ function [ lstiff,lrhs ] = local_assembling( v,d,h )
 % Wenyu Lei
 % Dec 29, 2015
 
+if (nargin < 4)
+    quad_degree = 2;
+end
+
 % Initialization
 lstiff=zeros(4,4);
 lrhs=zeros(1,4);
 
-% Get the subdivision of the integral domain.
-subd = subdivide(v',d,h);
-n_subdivide= length(subd);
-
-for i = 1:n_subdivide
+% Loop through the subdivision of the integral domain.
+for subT = subdivide(v',d,h)
+    
     % Get the quadarature info for each subdivision.
-    points_list=subd{i}';
-    [nq,q,w]=volquad(points_list,2);
+    points_list = subT{1}'; % extract the vertices
+    [nq,q,w]=volquad(points_list, quad_degree);
+    
+    % preallocate rhs values at q
+    rhs_vals_at_q = rhs_eval(q); % [4x1]
     
     % Add the increament for local stiffenss and right hand side on 
     % each quadrature point.
     for q_point = 1:nq
-        shape_value=zeros(1,4);
-        shape_grad=zeros(4,3);
+        shape_values_at_q_point=zeros(1,4);
+        shape_grads_at_q_point=zeros(4,3);
+        
         for j = 1:4
-            shape_value(j)=eval_basis_value(q(q_point,:),j,v);
-            shape_grad(j,:)=eval_basis_grad(q(q_point,:),j,v);
+            shape_values_at_q_point(j)=eval_basis_value(q(q_point,:),j,v);
+            shape_grads_at_q_point(j,:)=eval_basis_grad(q(q_point,:),j,v);
         end
-        gls_interp=grad_interp_levelset(shape_grad,d);
+        gls_interp=grad_interp_levelset(shape_grads_at_q_point,d);
         for j = 1:4
             for k = 1:4
+                %
+                % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
+                %
                 lstiff(j,k)=lstiff(j,k)...
-                    +(shape_grad(j,:)*shape_grad(k,:)'+shape_value(j)*shape_value(k))...
-                    *gls_interp*w(q_point);
+                    +( shape_grads_at_q_point(j,:)*shape_grads_at_q_point(k,:)'...
+                       +shape_values_at_q_point(j)*shape_values_at_q_point(k)...
+                     )*gls_interp*w(q_point);
             end
-            lrhs(j)=lrhs(j)+rhs_eval(function_extension(q(q_point,:)))...
-                *shape_value(j)*gls_interp*w(q_point);
+            %
+            % F = \int f*phi_j*|grad I_h d| dx
+            %
+            lrhs(j)=lrhs(j) + rhs_vals_at_q(q_point)*shape_values_at_q_point(j)...
+                                  *gls_interp*w(q_point);
         end
     end
 end
