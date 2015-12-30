@@ -1,6 +1,5 @@
 function [ x ] = parameterization( y )
-% PARAMETERIZATION OF TORUS
-% MODIFY r AND R AT HERE
+% Parameterization 
 R=1; r=0.6;
 
 
