@@ -1,6 +1,6 @@
 function [ res ] = rhs_eval( y )
-% RHS_EVAL 
-% ALSO MODIFY r AND R HERE
+% Right hand side evaluation.
+
 
 r=0.6; R=1.0;
 
@@ -17,7 +17,6 @@ res=s3p*c3tp+...
     6*r^2*c3p*s3tp+9*c3tp*s3p*R^2+10*r^2*c3tp*s3p)...
     /(r^2*(r^2*ct^2+2*ct*r*R+R^2));
 
-% STILL NEED TO CHECK
 
 end
 

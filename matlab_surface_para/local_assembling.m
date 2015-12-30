@@ -1,11 +1,22 @@
 function [ local_stiff,local_rhs ] = local_assembling( v1,v2,v3,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,alpha,beta )
-%LOCAL_ASSEMBLING 
-    
+% Local assembling routine on the cell \tao
+%
+% \int_{\tao} alpha*\nabla_\Gamma\phi_j\cdot\nabla_\Gamma\phi_k
+%            +beta*\phi_j*\phi_k dx
+% where \nabla_\Gamma is the surface gradient.
+% In our case, the local stiffness is case alpha=beta=1.
+% We also need to compute the mass matrix for error computation, i.e.
+% the case when alpha=0 and beta=1.
+% In the input arguemnts, v1, v2, v3 are vertices of the cell, and
+% hat_phi, hat_phix, hat_phiy, nq, weights are finite element and 
+% quadrature information.
+%
+%   Wenyu Lei
+%   Dec 30, 2015
+
     %init
     local_stiff = zeros (3,3);
     local_rhs = zeros (3,1);
-    
-
     
     %affine map info
     mat_B = [v2(1)-v1(1), v3(1)-v1(1); v2(2)-v1(2),v3(2)-v1(2)];
