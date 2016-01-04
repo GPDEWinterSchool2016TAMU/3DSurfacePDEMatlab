@@ -11,6 +11,8 @@ The weak form of our problem where Gamma is defined implicitly using the distanc
 
 \int_{D_h} \grad u_h \cdot \grad v_h + u_h v_h ) |\grad I_h d(\x)| d\x = \int_{D_h} f(x) v_h |\grad I_h d(\x)| d\x for all v_h \in P^1(T_h\cap D_h).
 
+as described in the the narrow banded method (NBM) of [1].
+
 The torus shape is hard coded into many of the individual functions.  The torus we are using is parameterized by
 
 R = 1.0;
@@ -34,6 +36,12 @@ and so we must extend it constant in the normal directions like the exact soluti
 
 
 Most if not all the functions have been vectorized in some fashion or another to get as much speed out of the code without sacrificing too much readability.  There are a number of test_*.m files which constitute our test suite to verify that the many individual components are working properly.  Feel free to add other tests as you add functionality.  
+
+
+References:
+
+[1] Deckelnick, Klaus, Charles M. Elliott, and Thomas Ranner. "Unfitted finite element methods using bulk meshes for surface partial differential equations." SIAM Journal on Numerical Analysis 52.4 (2014): 2137-2162.
+
 
 Wenyu Lei
 Spencer Patty
