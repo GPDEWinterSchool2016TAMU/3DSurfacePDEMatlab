@@ -1,7 +1,7 @@
 
 The main script is 
 
-level_set_torus.m
+level_set_torus_script.m
 
 which steps through constructing the mesh, assembling the matrix system, solving and then computing the L2(Gamma_h) error.  Any modification or addition will likely start there.  This entire code is setup to solve a the laplace beltrami equation on the Torus in R^3
 
