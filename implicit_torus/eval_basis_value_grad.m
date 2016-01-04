@@ -19,10 +19,11 @@ vec2=v(ind(i+3),:)-v(ind(i+1),:); % [nx3]
 vec3=v(ind(i),:)-v(ind(i+1),:);   % [nx3]
 vecx=repmat(x,length(i),1)-v(ind(i+1),:); % [nx3]
 
-cp=cross(vec1,vec2); % [nx3]
+cp=cross(vec1,vec2,2); % [nx3]  2nd dimension is where cross is applied
 
 % We dot product along second dimension to get out [nx1] shape instead of
-% [1x3] shape.
+% [1x3] shape.  Cross product is the same, especially since cross doesn't
+% make sense for anything other than vectors of dimension 3.
 
 % only do this dot product once
 v3dotcp = dot(vec3,cp,2);

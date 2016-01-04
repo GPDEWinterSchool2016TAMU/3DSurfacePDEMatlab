@@ -53,5 +53,6 @@ error_L2_Gamma_h = compute_error_L2_Gamma_h(sol,nb_node,nb_ele,n_nb_ele,quad_deg
 
 
 % plotting solution on Gamma_h
-plot_solution_on_Gamma_h(sol,nb_node,nb_ele,n_nb_ele,0);
+plot_edges_in_black = 0;
+plot_solution_on_Gamma_h(sol,nb_node,nb_ele,n_nb_ele,plot_edges_in_black);
 

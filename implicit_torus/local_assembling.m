@@ -50,45 +50,55 @@ for subT = subdivide(v,d,h)
     % Add the increment for local stiffness and right hand side on 
     % each quadrature point.
     for q_point = 1:nq
+        % evaluate the basis functions and gradients at once per q_point
         [shape_values_at_q_point, shape_grads_at_q_point] ...
                  = eval_basis_value_grad(q(q_point,:),1:4,v); % [4x1], [4x3]
          
+        % evaluate |I_h nabla d(q_point) |
         gls_interp_at_q_point=grad_interp_levelset(shape_grads_at_q_point,d);
-        
         
         % faster evaluation of local matrix contributions:
         % inner product the basis values and gradients all at once.
-        shape_val_matrix_at_q_point = shape_values_at_q_point*shape_values_at_q_point'; % [4x1][1x4]
-        shape_grad_matrix_at_q_point = shape_grads_at_q_point*shape_grads_at_q_point'; % [4x3][3x4]
+        shape_val_jk_matrix_at_q_point = shape_values_at_q_point*shape_values_at_q_point'; % [4x1][1x4]
+        shape_grad_jk_matrix_at_q_point = shape_grads_at_q_point*shape_grads_at_q_point'; % [4x3][3x4]
         
         %
-        % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
+        % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) * |grad I_h d| dx
         %
-        lstiff = lstiff + ( shape_val_matrix_at_q_point ...
-                           + shape_grad_matrix_at_q_point )...
-                           *gls_interp_at_q_point*w(q_point);
-                       
+        lstiff = lstiff + ( shape_grad_jk_matrix_at_q_point ...
+                            + shape_val_jk_matrix_at_q_point    ) ...
+                          * gls_interp_at_q_point ...
+                          * w(q_point);
+
         %
-        % F = \int f*phi_j*|grad I_h d| dx
+        % F = \int f*phi_j * |grad I_h d| dx
         %       
-        lrhs = lrhs + rhs_vals_at_q(q_point)*shape_values_at_q_point' ... % [1x4]
-                        *gls_interp_at_q_point*w(q_point);
-                    
+        lrhs = lrhs + rhs_vals_at_q(q_point) ...
+                    * shape_values_at_q_point' ... % [1x4]
+                    * gls_interp_at_q_point ...
+                    * w(q_point);
+
+%         %  slower calculation of local matrix, but easier to understand
 %         for j = 1:4
 %             for k = 1:4
 %                 %
 %                 % S = \int (gradphi_j . gradphi_k + phi_j*phi_k) *|grad I_h d| dx
 %                 %
-%                 lstiff(j,k)=lstiff(j,k)...
-%                     +( shape_grads_at_q_point(j,:)*shape_grads_at_q_point(k,:)'...
-%                        +shape_values_at_q_point(j)*shape_values_at_q_point(k)...
-%                      )*gls_interp_at_q_point*w(q_point);
+%                 lstiff(j,k)=lstiff(j,k) ...
+%                      + ( shape_grads_at_q_point(j,:)*shape_grads_at_q_point(k,:)'...
+%                          +shape_values_at_q_point(j)*shape_values_at_q_point(k)...
+%                        ) ...
+%                        * gls_interp_at_q_point ...
+%                        * w(q_point);
 %             end
+%
 %             %
 %             % F = \int f*phi_j*|grad I_h d| dx
 %             %
-%             lrhs(j)=lrhs(j) + rhs_vals_at_q(q_point)*shape_values_at_q_point(j)...
-%                                   *gls_interp_at_q_point*w(q_point);
+%             lrhs(j)=lrhs(j) + rhs_vals_at_q(q_point)...
+%                             * shape_values_at_q_point(j)...
+%                             * gls_interp_at_q_point...
+%                             * w(q_point);
 %         end
 
     end
