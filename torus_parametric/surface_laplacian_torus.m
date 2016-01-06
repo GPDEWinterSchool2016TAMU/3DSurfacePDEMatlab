@@ -109,20 +109,26 @@ l2_err = sqrt(transpose(err_vec)*MASS*err_vec)
 % Visualization
 % Using the function 'patch' to visualize each triangle.
 % Colors are decided by the value on the vertices.
-sv=zeros(n*n,3);
-for i=1:n
-    for j=1:n
-        sv(j+(i-1)*n,:)=parameterization(pm_node(j+(i-1)*(n+1),:));
-    end
-end
+
+Xnodes = parameterization(pm_node(global_ind_inverse,:));
 
 sele=global_ind(ele);
 figure(1);
-axis([-2,2,-2,2,-2,2]);
+axis([-2,2,-2,2,-2,2]); title('Solution')
 for i=1:n_ele
-    XX=[sv(sele(i,1),1); sv(sele(i,2),1);sv(sele(i,3),1)];
-    YY=[sv(sele(i,1),2); sv(sele(i,2),2);sv(sele(i,3),2)];
-    ZZ=[sv(sele(i,1),3); sv(sele(i,2),3);sv(sele(i,3),3)];
-    CC=[solution(sele(i,1));solution(sele(i,2));solution(sele(i,3))];
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=solution(sele(i,:),1);
+    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+end
+
+figure(2);
+axis([-2,2,-2,2,-2,2]); title('Error')
+for i=1:n_ele
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=err_vec(sele(i,:),1);
     patch(XX,YY,ZZ,CC,'EdgeColor','interp');
 end

@@ -27,11 +27,15 @@ function [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,hat_phix,hat_ph
     det_B = abs(det(mat_B));
     inv_B = [mat_B(2,2),-mat_B(1,2);-mat_B(2,1),mat_B(1,1)]/det_B;
     
+    % precompute various things at the quadpoints.
+    q_points = [hatx; haty]'*mat_B' + repmat(v(1,:),nq,1);
+    
+    rhs_vals = rhs_eval(q_points);
+    
     %local stiff and rhs
     for q_index = 1:nq
 %        q_point=AFFINE_MAPPING(v1,v2,v3,[hatx(q_index),haty(q_index)]);
-        q_point=[hatx(q_index),haty(q_index)]*mat_B'+v(1,:);
-        grad_chi=grad_pm(q_point);
+        grad_chi = grad_pm(q_points(q_index,:));
         G=grad_chi'*grad_chi;
         q=sqrt(det(G));
         invBtgradphi_at_q=inv_B'*[hat_phix(q_index,:); hat_phiy(q_index,:)];
@@ -39,8 +43,8 @@ function [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,hat_phix,hat_ph
                                   +beta*hat_phi(q_index,:)'*hat_phi(q_index,:))...
                                   *q_weights(q_index)*det_B*q;
         if(rhs_flag)
-            local_rhs=local_rhs+rhs_eval(q_point)*hat_phi(q_index,:)'...
-                       *q_weights(q_index)*det_B*q;
+            local_rhs=local_rhs + rhs_vals(q_index)*hat_phi(q_index,:)'...
+                                   *q_weights(q_index)*det_B*q;
         end
         % The following shows the local assembling in the for loop. We also
         % use the original formula (which can be simplified).
