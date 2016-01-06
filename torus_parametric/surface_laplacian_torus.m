@@ -26,7 +26,7 @@ format long;
 % parametric domain (pm_node), a connectivitiy list for the pm_node (ele),
 % a mapping from indices in the parametric domain to indices in the
 % surface (global_ind) and its inverse mapping (global_ind_inverse).
-n=8;
+n=32;
 [ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
 % Initialization
@@ -114,7 +114,7 @@ Xnodes = parameterization(pm_node(global_ind_inverse,:));
 
 sele=global_ind(ele);
 figure(1);
-axis([-2,2,-2,2,-2,2]); title('Solution')
+axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
 for i=1:n_ele
     XX=Xnodes(sele(i,:),1);
     YY=Xnodes(sele(i,:),2);
@@ -124,7 +124,7 @@ for i=1:n_ele
 end
 
 figure(2);
-axis([-2,2,-2,2,-2,2]); title('Error')
+axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
 for i=1:n_ele
     XX=Xnodes(sele(i,:),1);
     YY=Xnodes(sele(i,:),2);
