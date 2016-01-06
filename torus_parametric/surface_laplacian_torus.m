@@ -23,9 +23,9 @@ format long;
 % Same the as vertices on the left and right boundary.
 % We return the number of the vertices corresponding to the surface
 % (n_nodes), the number of elements (n_ele), a vertices list in the 
-% parametric domain (pm_node), a connectivitiy list for the pm_node (ele)
-% and a mapping from indices in the parametric domain to indices in the
-% surface (global_ind).
+% parametric domain (pm_node), a connectivitiy list for the pm_node (ele),
+% a mapping from indices in the parametric domain to indices in the
+% surface (global_ind) and its inverse mapping (global_ind_inverse).
 n=8;
 [ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
@@ -83,6 +83,10 @@ solution = A\rhs;
 % Here M is the mass matrix.
 
 % We first get the coefficients of I_h u
+% This can be achieved by using the inverse mapping 
+% of the global indexing (global_ind_inverse) to 
+% extract unique nodes from 
+% parametric node list
 exact_sol = exact(pm_node(global_ind_inverse,:));
 
 err_vec =exact_sol - solution;
