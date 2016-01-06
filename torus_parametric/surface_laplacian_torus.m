@@ -27,7 +27,7 @@ format long;
 % and a mapping from indices in the parametric domain to indices in the
 % surface (global_ind).
 n=8;
-[ n_node,n_ele,pm_node,ele,global_ind] = triangulation_surface( n );
+[ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
 % Initialization
 A = sparse([],[],[],n_node,n_node,7*n_node);
@@ -83,9 +83,7 @@ solution = A\rhs;
 % Here M is the mass matrix.
 
 % We first get the coefficients of I_h u
-surface_node_ind=reshape(1:(n+1)^2,[n+1 n+1]);
-surface_node_ind=reshape(surface_node_ind(1:n,1:n),[1 n*n]);
-exact_sol = exact(pm_node(surface_node_ind,:));
+exact_sol = exact(pm_node(global_ind_inverse,:));
 
 err_vec =exact_sol - solution;
 %Assemble mass matrix
