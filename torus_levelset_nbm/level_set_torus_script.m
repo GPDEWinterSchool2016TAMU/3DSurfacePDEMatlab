@@ -2,16 +2,19 @@ clear all; close all; clc;
 format long;
 
 % mesh size
-n=32; h=4./n;  
+n=8; h=4./n;  
 
 % quadrature degree of accuracy
 quad_degree_bulk = 2; % for tetrahedra
 quad_degree_face = 2; % for faces
 
+ISO2MESH_TEMP = '/Users/srobertp/software/geometric_pdes_matlab/tmp_iso2mesh_files';
+ISO2MESH_SESSION = 'srp_';
 
 % Mesh generation
 fprintf('...Generating Mesh...\n');
 % [n_nb_node,n_nb_ele,nb_node,nb_ele]=bulk_mesh_generator(h); % unstructure
+% [n_nb_node,n_nb_ele,nb_node,nb_ele]=bulk_mesh_generator2(h); % unstructure
 [n_nb_node,n_nb_ele,nb_node,nb_ele]=uniform_bulk_mesh(n,h); % structured
 
 % Matrix and vector initialization
