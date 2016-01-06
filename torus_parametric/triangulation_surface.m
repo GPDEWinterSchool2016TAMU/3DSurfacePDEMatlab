@@ -1,4 +1,4 @@
-function [ n_node,n_ele,pm_node,ele,global_ind ] = triangulation_surface( n )
+function [ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse ] = triangulation_surface( n )
 % Generate the triangulation on the parametric domain.
 % In our case, for a torus, this domain is a square [-\pi,\pi]*[-\pi,\pi].
 % Note that, points on the parametric domain are periodic on both 
@@ -35,18 +35,16 @@ n_ele=length(ele);
 pm_node=dt.Points;
 n_node=n*n;  % number of vertiecs on the surface.
 
-% Generate the index mapping from the square to the torus.
-global_ind=zeros(1,(n+1)*(n+1));
-for i=1:n
-    for j=1:n
-        global_ind(j+(i-1)*(n+1))=j+(i-1)*n;
-    end
-end
+%
+% identify the periodic nodes and create mapping to adjust the nodes
+%
+global_ind=zeros(n+1,n+1);
+global_ind(1:n,1:n)=reshape(1:n^2,n,n);
+global_ind(end,1:end-1)=global_ind(1,1:end-1);
+global_ind(1:end-1,end)=1:n;
+global_ind(end,end)=1;
+global_ind=reshape(global_ind,1,(n+1)*(n+1));
 
-for i=1:n
-    global_ind((n+1)*i)=(i-1)*(n)+1;
-    global_ind(n*(n+1)+i)=i;
-end
 
-global_ind((n+1)*(n+1))=1;
-end
+global_ind_inverse=reshape(1:(n+1)^2,[n+1 n+1]);
+global_ind_inverse=reshape(global_ind_inverse(1:n,1:n),[1 n*n]);
