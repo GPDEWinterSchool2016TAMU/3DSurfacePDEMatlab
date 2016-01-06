@@ -42,16 +42,14 @@ where M_\epsilon = \int_D (1-\psi^2) dx.
 
 
 The error analysis is evaluated using 
-l2_error = sqrt( error_at_nodes^T * A * error_at_nodes )//M_epsilon;
+l2_error = sqrt( error_at_nodes^T * A * error_at_nodes )/M_epsilon;
 where A is the stiffness matrix and we can compute M_epsilon through local assembling.
 
 At last, we note that the convergence rate is depended on \epsilon due to the definition of the phase field function.
 
 
 Reference: 
-Burger, M., 2009. Finite element approximation of elliptic partial differential 
-equations on implicit surfaces. Computing and visualization in science, 12(3), 
-pp.87-100.
+Burger, M., 2009. Finite element approximation of elliptic partial differential equations on implicit surfaces. Computing and visualization in science, 12(3), pp.87-100.
 
 Wenyu Lei
 Spencer Patty
