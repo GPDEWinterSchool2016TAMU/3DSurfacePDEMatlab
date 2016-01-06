@@ -17,40 +17,51 @@
 clear all; close all; clc;
 format long;
 
-% Get the triangulation on the parametric domain
-n=64;
-[ n_node,n_ele,node,ele,global_ind ] = triangulation_surface( n );
+% Get the triangulation on the parametric domain.
+% Note that vertiecs on the top and bottom of the boundary coincide due to
+% the periodic parametrization.
+% Same the as vertices on the left and right boundary.
+% We return the number of the vertices corresponding to the surface
+% (n_nodes), the number of elements (n_ele), a vertices list in the 
+% parametric domain (pm_node), a connectivitiy list for the pm_node (ele),
+% a mapping from indices in the parametric domain to indices in the
+% surface (global_ind) and its inverse mapping (global_ind_inverse).
+n=32;
+[ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
 % Initialization
-A = sparse([],[],[],n*n,n*n,9*n_ele);
-MASS = sparse([],[],[],n*n,n*n,9*n_ele);
-rhs = zeros(n*n,1);
+A = sparse([],[],[],n_node,n_node,7*n_node);
+MASS = sparse([],[],[],n_node,n_node,7*n_node);
+rhs = zeros(n_node,1);
 
 % Since we are going to compute the integral on the reference element,
 % we need provide the quadrature rule for the reference triangle.
 % Meanwhile, we can also provide infomation of shape functions on the 
-% reference element, i.e. function values (hat_phi) nad function gradients
+% reference element, i.e. function values (hat_phi) and function gradients
 % (hat_phix and hat_phiy) on each quadrature points.
+
+% quadrature weights
 q_weights= [1./24,1./24,1./24,9./24];
+% x-component of the quadrature points
 hatx=[0,1,0,1./3];
+% y-component of the quadrature points
 haty=[0,0,1,1./3];
 nq=4;
+% shape value and shape gradient (x and y components)
 [ hat_phi,hat_phix,hat_phiy ] = FEEVAL( hatx,haty,nq );
 
 % Assembling
-for i=1 : n_ele
+for cell=1 : n_ele
     % Get local stiffness matrix and local rhs
-    v1 = [node(ele(i,1),1), node(ele(i,1),2)];
-    v2 = [node(ele(i,2),1), node(ele(i,2),2)];
-    v3 = [node(ele(i,3),1), node(ele(i,3),2)];
-    [ local_stiff,local_rhs ] = local_assembling( v1,v2,v3,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,1,1);
+    cell_ind = ele(cell,1:3);     % [1x3]
+    vertices = pm_node(cell_ind, :); % [3x2]
+    cell_global_ind=global_ind(cell_ind);  
+    [ local_stiff,local_rhs ] ...
+        = local_assembling( vertices,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,1,1,1);
     % Copy local to global
-    for j=1:3
-        for k=1:3
-            A(global_ind(ele(i,k)),global_ind(ele(i,j)))=A(global_ind(ele(i,k)),global_ind(ele(i,j)))+ local_stiff(j,k);
-        end
-        rhs(global_ind(ele(i,j)))=rhs(global_ind(ele(i,j)))+local_rhs(j);
-    end
+    A(cell_global_ind,cell_global_ind) ...
+        =A(cell_global_ind,cell_global_ind) + local_stiff'; %[3x3]
+    rhs(cell_global_ind) = rhs(cell_global_ind) + local_rhs;  %[3x1]
 end
 
 % Apply back slash solver
@@ -71,54 +82,53 @@ solution = A\rhs;
 % (exact_sol-solution)'M(exact_sol-solution)
 % Here M is the mass matrix.
 
-% Get the coefficients of I_h u
-exact_sol = zeros(n*n,1);
-for i = 1:n
-    for j=1:n
-        exact_sol(j+(i-1)*n)=exact(node(j+(i-1)*(n+1),:));
-    end
-end
+% We first get the coefficients of I_h u
+% This can be achieved by using the inverse mapping 
+% of the global indexing (global_ind_inverse) to 
+% extract unique nodes from 
+% parametric node list
+exact_sol = exact(pm_node(global_ind_inverse,:));
+
 err_vec =exact_sol - solution;
 %Assemble mass matrix
-for i=1 : n_ele
+for cell=1 : n_ele
     % Local mass matrix
-    v1 = [node(ele(i,1),1), node(ele(i,1),2)];
-    v2 = [node(ele(i,2),1), node(ele(i,2),2)];
-    v3 = [node(ele(i,3),1), node(ele(i,3),2)];
-    [local_mass,lrhs] = local_assembling( v1,v2,v3,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,0,1);
+    cell_ind = ele(cell,1:3);     % [1x3]
+    vertices = pm_node(cell_ind, :); % [3x2]
+    cell_global_ind=global_ind(cell_ind);
+    [local_mass,~] = ...
+        local_assembling( vertices,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,0,1,0);
     % copy local to global
-    for j=1:3
-        for k=1:3
-            MASS(global_ind(ele(i,k)),global_ind(ele(i,j)))=MASS(global_ind(ele(i,k)),global_ind(ele(i,j)))+ local_mass(j,k);
-        end
-    end
+    MASS(cell_global_ind,cell_global_ind)...
+        =MASS(cell_global_ind,cell_global_ind) + local_mass'; %[3x3]
 end
 
 % print out the error
-err = sqrt(transpose(err_vec)*MASS*err_vec)
+l2_err = sqrt(transpose(err_vec)*MASS*err_vec)
 
 % Visualization
 % Using the function 'patch' to visualize each triangle.
 % Colors are decided by the value on the vertices.
-sv=zeros(n*n,3);
-for i=1:n
-    for j=1:n
-        sv(j+(i-1)*n,:)=parameterization(node(j+(i-1)*(n+1),:));
-    end
-end
-sele=zeros(n_ele,3);
+
+Xnodes = parameterization(pm_node(global_ind_inverse,:));
+
+sele=global_ind(ele);
+figure(1);
+axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
 for i=1:n_ele
-    for j=1:3
-        sele(i,j)=global_ind(ele(i,j));
-    end
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=solution(sele(i,:),1);
+    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
 end
 
-figure(1);
-axis([-2,2,-2,2,-2,2]);
+figure(2);
+axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
 for i=1:n_ele
-    XX=[sv(sele(i,1),1); sv(sele(i,2),1);sv(sele(i,3),1)];
-    YY=[sv(sele(i,1),2); sv(sele(i,2),2);sv(sele(i,3),2)];
-    ZZ=[sv(sele(i,1),3); sv(sele(i,2),3);sv(sele(i,3),3)];
-    CC=[solution(sele(i,1));solution(sele(i,2));solution(sele(i,3))];
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=err_vec(sele(i,:),1);
     patch(XX,YY,ZZ,CC,'EdgeColor','interp');
 end
