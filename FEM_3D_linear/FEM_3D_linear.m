@@ -1,5 +1,5 @@
 % Implementation of finite element method on 3D
-% Note we assembe the stiffness and mass matrix directly on the real space
+% Note we assembe the stiffness and mass matrices directly on the real space
 %
 % The equation we try to approximate is
 % u-\Delta u = f in \Omega=[0,1]^3
