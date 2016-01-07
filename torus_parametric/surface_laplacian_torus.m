@@ -26,7 +26,7 @@ format long;
 % parametric domain (pm_node), a connectivitiy list for the pm_node (ele),
 % a mapping from indices in the parametric domain to indices in the
 % surface (global_ind) and its inverse mapping (global_ind_inverse).
-n=256;
+n=32;
 [ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
 % Initialization
@@ -40,27 +40,31 @@ rhs = zeros(n_node,1);
 % reference element, i.e. function values (hat_phi) and function gradients
 % (hat_phix and hat_phiy) on each quadrature points.
 
-% quadrature weights
-q_weights= [1./24,1./24,1./24,9./24];
-% x-component of the quadrature points
-hatx=[0,1,0,1./3];
-% y-component of the quadrature points
-haty=[0,0,1,1./3];
+% Quadrature on reference element
 nq=4;
-% shape value and shape gradient (x and y components)
-[ hat_phi,hat_phix,hat_phiy ] = FEEVAL( hatx,haty,nq );
+% quadrature weights [nqx1]
+q_weights= [1./24,1./24,1./24,9./24]';
+% quadrature points [nq x 2]
+q_yhat = [0,1,0,1./3;... % x components  
+          0,0,1,1./3]';  % y components
+      
+% shape value and shape gradient (x and y components) each are [nqx1]
+[ hat_phistar_at_q,hat_phistarx_at_q,hat_phistary_at_q ] = FEEVAL( q_yhat,nq );
 
 % Assembling
 for cell=1 : n_ele
     % Get local stiffness matrix and local rhs
     cell_ind = ele(cell,1:3);     % [1x3]
-    vertices = pm_node(cell_ind, :); % [3x2]
+    T_vertices = pm_node(cell_ind, :); % [3x2]
     cell_global_ind=global_ind(cell_ind);  
     [ local_stiff,local_rhs ] ...
-        = local_assembling( vertices,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,1,1,1);
+        = local_assembling( T_vertices,...
+                            hat_phistar_at_q, hat_phistarx_at_q, hat_phistary_at_q,...
+                            q_yhat,nq,q_weights,...
+                            1,1,1); % a, beta, rhs_flag
     % Copy local to global
     A(cell_global_ind,cell_global_ind) ...
-        =A(cell_global_ind,cell_global_ind) + local_stiff'; %[3x3]
+           = A(cell_global_ind,cell_global_ind) + local_stiff; %[3x3]
     rhs(cell_global_ind) = rhs(cell_global_ind) + local_rhs;  %[3x1]
 end
 
@@ -94,13 +98,16 @@ err_vec =exact_sol - solution;
 for cell=1 : n_ele
     % Local mass matrix
     cell_ind = ele(cell,1:3);     % [1x3]
-    vertices = pm_node(cell_ind, :); % [3x2]
+    T_vertices = pm_node(cell_ind, :); % [3x2]
     cell_global_ind=global_ind(cell_ind);
     [local_mass,~] = ...
-        local_assembling( vertices,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,0,1,0);
+        local_assembling( T_vertices,...
+                          hat_phistar_at_q,hat_phistarx_at_q,hat_phistary_at_q,...
+                          q_yhat,nq,q_weights,...
+                          0,1,0); %alpha, beta, rhs_flag
     % copy local to global
     MASS(cell_global_ind,cell_global_ind)...
-        =MASS(cell_global_ind,cell_global_ind) + local_mass'; %[3x3]
+                =MASS(cell_global_ind,cell_global_ind) + local_mass; %[3x3]
 end
 
 % print out the error
@@ -110,25 +117,27 @@ l2_err = sqrt(transpose(err_vec)*MASS*err_vec)
 % Using the function 'patch' to visualize each triangle.
 % Colors are decided by the value on the vertices.
 
-% Xnodes = parameterization(pm_node(global_ind_inverse,:));
-% 
-% sele=global_ind(ele);
-% figure(1);
-% axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
-% for i=1:n_ele
-%     XX=Xnodes(sele(i,:),1);
-%     YY=Xnodes(sele(i,:),2);
-%     ZZ=Xnodes(sele(i,:),3);
-%     CC=solution(sele(i,:),1);
-%     patch(XX,YY,ZZ,CC,'EdgeColor','interp');
-% end
-% 
-% figure(2);
-% axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
-% for i=1:n_ele
-%     XX=Xnodes(sele(i,:),1);
-%     YY=Xnodes(sele(i,:),2);
-%     ZZ=Xnodes(sele(i,:),3);
-%     CC=err_vec(sele(i,:),1);
-%     patch(XX,YY,ZZ,CC,'EdgeColor','interp');
-% end
+Xnodes = parameterization(pm_node(global_ind_inverse,:));
+
+% change the element connectivity list to use the unique nodes of
+% global_ind instead of the repeated ones of ele and save as sele.
+sele=global_ind(ele);
+figure(1);
+axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
+for i=1:n_ele
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=solution(sele(i,:),1);
+    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+end
+
+figure(2);
+axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
+for i=1:n_ele
+    XX=Xnodes(sele(i,:),1);
+    YY=Xnodes(sele(i,:),2);
+    ZZ=Xnodes(sele(i,:),3);
+    CC=err_vec(sele(i,:),1);
+    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+end
