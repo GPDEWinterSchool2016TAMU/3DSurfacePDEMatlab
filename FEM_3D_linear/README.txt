@@ -1,5 +1,5 @@
 
-This section mainly shows the implementation of the standard finite element method in 3D. Note that directly we do the assembling on the real space (without using reference cell and affine mapping). The main script is 
+This section mainly shows the implementation of the standard finite element method in 3D. Note that we assemble the stiffness and mass matrices directly on the real space (without using reference cell and affine mapping). The main script is 
 
 FEM_3D_linear.m
 
