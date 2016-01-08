@@ -1,32 +1,16 @@
-% Finite element method on parametrized surfaces
-% Consider the following equation
+function [l2_error] = surface_laplacian_torus_function(n,plot_solutions)
+% [l2_error] = surface_laplacian_torus_function(n,plot_solutions)
 %
-% u-\Delta_\Gamma u = f on \Gamma
+% Calls the appropriate mesh, assembly and error analysis functions and
+% plots the solution and error if desired.
 %
-% where \Gamma is a surface (torus in this code) in 3D and 
-% \Delta_gamma is the Laplace-Beltrami operator
-% We parameterize the torus by
-% x_1 = (R+r\cos\theta)\cos\phi
-% x_2 = (R+r\cos\theta)\sin\phi
-% x_3 = r\sin\theta
-% for \theta and \phi \in [-\pi,\pi].
+%  input:
+%    n = number of discretizations in each direction of parametric space.
+%    plot_solution = flag for plotting or not.
 %
-% Wenyu Lei
-% Dec 30, 2015
+%
 
-clear all; close all; clc;
-format long;
 
-% Get the triangulation on the parametric domain.
-% Note that vertices on the top and bottom of the boundary coincide due to
-% the periodic parametrization.
-% Same the as vertices on the left and right boundary.
-% We return the number of the vertices corresponding to the surface
-% (n_nodes), the number of elements (n_ele), a vertices list in the 
-% parametric domain (pm_node), a connectivitiy list for the pm_node (ele),
-% a mapping from indices in the parametric domain to indices in the
-% surface (global_ind) and its inverse mapping (global_ind_inverse).
-n=32;
 [ n_node,n_ele,pm_node,ele,global_ind,global_ind_inverse] = triangulation_surface( n );
 
 % Initialization
@@ -112,33 +96,39 @@ for cell=1 : n_ele
 end
 
 % print out the error
-l2_err = sqrt(transpose(err_vec)*MASS*err_vec)
+l2_error = sqrt(transpose(err_vec)*MASS*err_vec);
 
-% Visualization
-% Using the function 'patch' to visualize each triangle.
-% Colors are decided by the value on the vertices.
 
-Xnodes = parameterization(pm_node(global_ind_inverse,:));
 
-% change the element connectivity list to use the unique nodes of
-% global_ind instead of the repeated ones of ele and save as sele.
-sele=global_ind(ele);
-figure(1);
-axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
-for i=1:n_ele
-    XX=Xnodes(sele(i,:),1);
-    YY=Xnodes(sele(i,:),2);
-    ZZ=Xnodes(sele(i,:),3);
-    CC=solution(sele(i,:),1);
-    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+if (plot_solutions)
+    % Visualization
+    % Using the function 'patch' to visualize each triangle.
+    % Colors are decided by the value on the vertices.
+
+    Xnodes = parameterization(pm_node(global_ind_inverse,:));
+
+    % change the element connectivity list to use the unique nodes of
+    % global_ind instead of the repeated ones of ele and save as sele.
+    sele=global_ind(ele);
+    figure(1);
+    axis([-2,2,-2,2,-2,2]); title('Solution'); colormap('default'); colorbar;
+    for i=1:n_ele
+        XX=Xnodes(sele(i,:),1);
+        YY=Xnodes(sele(i,:),2);
+        ZZ=Xnodes(sele(i,:),3);
+        CC=solution(sele(i,:),1);
+        patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+    end
+
+    figure(2);
+    axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
+    for i=1:n_ele
+        XX=Xnodes(sele(i,:),1);
+        YY=Xnodes(sele(i,:),2);
+        ZZ=Xnodes(sele(i,:),3);
+        CC=err_vec(sele(i,:),1);
+        patch(XX,YY,ZZ,CC,'EdgeColor','interp');
+    end
 end
 
-figure(2);
-axis([-2,2,-2,2,-2,2]); title('Error'); colormap('jet'); colorbar;
-for i=1:n_ele
-    XX=Xnodes(sele(i,:),1);
-    YY=Xnodes(sele(i,:),2);
-    ZZ=Xnodes(sele(i,:),3);
-    CC=err_vec(sele(i,:),1);
-    patch(XX,YY,ZZ,CC,'EdgeColor','interp');
 end

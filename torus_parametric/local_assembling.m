@@ -1,4 +1,7 @@
-function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar1,hat_phistar2,q_yhat,nq,q_weights,alpha,beta,rhs_flag )
+function [ local_stiff,local_rhs ] = local_assembling( y, hat_phistar,...
+                                                       grad_hat_phistar_x1,grad_hat_phistar_x2,...
+                                                       q_yhat,nq,q_weights,...
+                                                       alpha,beta,rhs_flag )
 % Local assembling routine on the cell X0(T) (with T a cell in parametric
 % domain).  This is set to assemble stiffness and rhs for the weak form of 
 %
@@ -35,8 +38,8 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
 %  Input:
 %    y = [y1; y2; y3] [3x3] are vertices of the cell T
 %    hat_phistar [nqx3]  = the 3 basis elements (columns) evaluated at nq points
-%    hat_phistar1 [nqx3] = the 3 basis x1 derivatives (columns) evaluated at nq points
-%    hat_phistar2 [nqx3] = the 3 basis x2 derivatives (columns) evaluated at nq points
+%    grad_hat_phistar1 [nqx3] = the 3 basis x1 derivatives (columns) evaluated at nq points
+%    grad_hat_phistar2 [nqx3] = the 3 basis x2 derivatives (columns) evaluated at nq points
 %    nq = number of quadrature points
 %    q_yhat = [nqx2] list of reference element quadrature points
 %    q_weights = [nqx1] list of quadrature weights corresponding to q_yhat
@@ -60,7 +63,7 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
 %    hat(T) = reference element in R^2
 %      T    = parameter space element in R^2
 %    chi(T) = curvilinear element on Torus in R^3
-%    X0(T)  = linear interpolant of chi(X) with vertices on Torus in R^3
+%    X0(T)  = linear interpolant of chi(T) with vertices on Torus in R^3
 %
 %  Drawings:
 %
@@ -110,8 +113,8 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
     
     % Following Section 3.3.1 of notes:
     %
-    % X_{hat{T}}(yhat) = I_h(chi)(yhat) = chi_1 + yhat^{T} * [chi_2-chi1; chi3-chi1]  ( [1x2][2x3] = [1x3] )
-    % X0(y) = chi_1 + (y-y1)^{T}*B^{-T} * [chi_2-chi1; chi3-chi1]   ( [1x2][2x2][2x3] = [1x3] )
+    % X_{hat{T}}(yhat) = chi_1 + yhat^{T} * [chi_2-chi1; chi3-chi1]  ( [1x2][2x3] = [1x3] )
+    % X0(y) = chi_1 + (y-y1)^{T}*B^{-T} * [chi_2-chi1; chi3-chi1]    ( [1x2][2x2][2x3] = [1x3] )
     % 
     % grad_Ih_chi = grad_{y} X0(y) = [chi_2-chi_1; chi_3-chi_1]'*inv(B) [3x2][2x2] = [3x2]
     %
@@ -146,7 +149,7 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
         %                             * (inv(B)*grad_phistar_j(yhat)) * Q_Gamma * det(B) dyhat
         %
 
-        grad_phi_star_at_q_point=inv_B'*[hat_phistar1(q_index,:); hat_phistar2(q_index,:)];
+        grad_phi_star_at_q_point=inv_B'*[grad_hat_phistar_x1(q_index,:); grad_hat_phistar_x2(q_index,:)];
         grad_phi_ij_matrix = grad_phi_star_at_q_point'*(G_Gamma\grad_phi_star_at_q_point);  % = [grad phi_i . grad_phi_j ]_{ij}
         phi_ij_matrix = hat_phistar(q_index,:)'*hat_phistar(q_index,:); % = [phi_i phi_j]_{ij}
         
@@ -193,7 +196,7 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
             % since we get first order by default and then by a duality argument
             % gain an extra h.  However, using q on rhs makes the error 
             % analysis doable.
-            grad_chi = grad_pm(q_points(q_index,:));
+            grad_chi = grad_parameterization(q_points(q_index,:));
             G=grad_chi'*grad_chi; % chi metric tensor
             q=sqrt(det(G)); % chi area element
             
@@ -211,15 +214,15 @@ function [ local_stiff,local_rhs ] = local_assembling( y,hat_phistar,hat_phistar
 %         for j = 1:3
 %             for i = 1:3
 %                 local_stiff(j,i)= local_stiff(j,i)...
-%                     +(beta*hat_phi(q_index,i)*hat_phi(q_index,j)...
+%                     +(beta*hat_phistar(q_index,i)*hat_phistar(q_index,j)...
 %                     +alpha*dot(...
-%                     [hat_phix(q_index,i), hat_phiy(q_index,i)]*inv_B*invG*grad_chi',...
-%                     [hat_phix(q_index,j), hat_phiy(q_index,j)]*inv_B*invG*grad_chi'))...
+%                     [grad_hat_phistar1(q_index,i), grad_hat_phistar2(q_index,i)]*inv_B*invG*grad_chi',...
+%                     [grad_hat_phistar1(q_index,j), grad_hat_phistar2(q_index,j)]*inv_B*invG*grad_chi'))...
 %                     *q_weights(q_index)*det_B*q;
 %             end
 %             if(rhs_flag)
 %             local_rhs(j) = local_rhs(j) +...
-%                 (rhs_eval(q_point)*hat_phi(q_index,j))*q_weights(q_index)*det_B*q;
+%                 (rhs_eval(q_point)*hat_phistar(q_index,j))*q_weights(q_index)*det_B*q;
 %             end
 %         end
     end
