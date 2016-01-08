@@ -1,4 +1,4 @@
-function [ grad ] = grad_pm( y )
+function [ grad ] = grad_parameterization( y )
 % Gradient of parameterization.
 % returns [3x2] so don't really want to vectorize since it would add third
 % dimension complication.
