@@ -1,10 +1,9 @@
-function [ hat_phi,hat_phix,hat_phiy ] = FEEVAL( hatx,haty,nq )
+function [ hat_phi,hat_phix,hat_phiy ] = FEEVAL( yhat,nq )
 % Return shape value and shape gradient on quadrature points
 % in the reference triangle
 % The following is the linear case. 
 % input:
-%   hatx: x-component of the quadrature points.
-%   haty: y-component of the quadrature points.
+%   yhat: [nqx2] list of nq quadrature points [x y]
 %   nq: number of the quadrature points.
 % output:
 %   hat_phi: shape value 
@@ -14,18 +13,10 @@ function [ hat_phi,hat_phix,hat_phiy ] = FEEVAL( hatx,haty,nq )
 %   Wenyu Lei
 %   Dec 30, 2015
 
-hat_phi=zeros(nq,3);
-hat_phix=zeros(nq,3);
-hat_phiy=zeros(nq,3);
+hat_phi = [1-yhat(:,1) - yhat(:,2), yhat(:,1), yhat(:,2)];
 
-for i=1:nq
-        hat_phi(i,1) = 1-hatx(i)-haty(i);
-        hat_phi(i,2) = hatx(i);
-        hat_phi(i,3) = haty(i);
-        
-        hat_phix(i,1) = -1; hat_phix(i,2) = 1; hat_phix(i,3) = 0;
-        hat_phiy(i,1) = -1; hat_phiy(i,2) = 0; hat_phiy(i,3) = 1;
-end
+hat_phix = [-1*ones(nq,1), 1*ones(nq,1), zeros(nq,1)];
+hat_phiy = [-1*ones(nq,1), zeros(nq,1), 1*ones(nq,1)];
 
 end
 

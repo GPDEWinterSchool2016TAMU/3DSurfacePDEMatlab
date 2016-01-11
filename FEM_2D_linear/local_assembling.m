@@ -1,5 +1,18 @@
-function [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,hat_phix,hat_phiy,hatx,haty,nq,q_weights,alpha,beta,rhs_flag )
+function [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,...
+                                                       grad_hat_phi_x1,grad_hat_phi_x2,...
+                                                       q_yhat,nq,q_weights,...
+                                                       alpha,beta,rhs_flag)
 
+% [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,grad_hat_phi_x1,grad_hat_phi_x2, q_yhat,nq,q_weights, alpha,beta,rhs_flag)
+%
+% construct local contributions from cell (defiend by vertices v to 
+% stiffness matrix and rhs vector corresponding to
+% strong form equation
+%
+%  -div( a grad u) + bu = f
+%
+%  with du/dn = 0 on boundary.
+%
 
     %init
     local_stiff = zeros (3,3);
@@ -10,43 +23,46 @@ function [ local_stiff,local_rhs ] = local_assembling( v,hat_phi,hat_phix,hat_ph
     det_B = abs(det(mat_B));
     inv_B = [mat_B(2,2),-mat_B(1,2);-mat_B(2,1),mat_B(1,1)]/det_B;
     
-    % precompute various things at the quadpoints.
-    q_points = [hatx; haty]'*mat_B' + repmat(v(1,:),nq,1);
-    rhs_vals = rhs_eval(q_points);
+    % precompute various things at the quadrature points.
+    q_points = q_yhat*mat_B' + repmat(v(1,:),nq,1); % [nqx2] list of quadrature points in cell 
+    rhs_vals = rhs_eval(q_points);                  % [nqx1] f(q_points)
+                    
     
-   
     %local stiff and rhs
     for q_index = 1:nq
 
-        grad_phi_star_at_q_point=inv_B'*[hat_phix(q_index,:); hat_phiy(q_index,:)]; %grad_phistar
+        grad_phi_at_q_point=inv_B'*[grad_hat_phi_x1(q_index,:); grad_hat_phi_x2(q_index,:)]; % [2x3] 3 basis func gradients
+  
+        % exploiting matlab's speed with vector operations, we avoid doing
+        % the for loops to construct the local matrix and rhs.  Below in
+        % the commented section is the same code using for loops.
+        grad_phi_ij_matrix = grad_phi_at_q_point'*grad_phi_at_q_point;  % = [grad phi_i . grad_phi_j ]_{ij}
+        phi_ij_matrix = hat_phi(q_index,:)'*hat_phi(q_index,:);         % = [phi_i phi_j]_{ij}
         
-        grad_phi_ij_matrix = grad_phi_star_at_q_point'*grad_phi_star_at_q_point;
-        phi_ij_matrix = hat_phi(q_index,:)'*hat_phi(q_index,:);
-        
-        local_stiff=local_stiff + (alpha * grad_phi_ij_matrix...
-                                + beta * phi_ij_matrix )...
+        local_stiff=local_stiff + (alpha * grad_phi_ij_matrix' ...
+                                   + beta * phi_ij_matrix' )...
                                 * q_weights(q_index)...
-                                * det_B;              
+                                * det_B;   
+                            
         if(rhs_flag)
             local_rhs=local_rhs + rhs_vals(q_index)...    % f(q_point)
-                                  *hat_phi(q_index,:)'... % basis on reference element [3x1]
+                                  *hat_phi(q_index,:)'... % basis on reference element at q_point [3x1]
                                   *q_weights(q_index)...  % quadrature weight
                                   *det_B;                 % reference area-element transform
         end
-        % The following shows the local assembling in the for loop. We also
-        % use the original formula (which can be simplified).
+        
+        
+%         % The following shows the local assembling with the for loop.
 %         for j = 1:3
 %             for k = 1:3
 %                 local_stiff(j,k)= local_stiff(j,k)...
 %                     +(beta*hat_phi(q_index,k)*hat_phi(q_index,j)...
-%                     +alpha*dot(...
-%                     [hat_phix(q_index,k), hat_phiy(q_index,k)]*inv_B,...
-%                     [hat_phix(q_index,j), hat_phiy(q_index,j)]*inv_B)...
+%                       +alpha*dot(grad_phi_at_q_point(:,k),grad_phi_at_q_point(:,j)))...
 %                     *q_weights(q_index)*det_B;
 %             end
 %             if(rhs_flag)
-%             local_rhs(j) = local_rhs(j) +...
-%                 (rhs_eval(q_point)*hat_phi(q_index,j))*q_weights(q_index)*det_B;
+%                 local_rhs(j) = local_rhs(j) +...
+%                     (rhs_vals(q_index)*hat_phi(q_index,j))*q_weights(q_index)*det_B;
 %             end
 %         end
     end
