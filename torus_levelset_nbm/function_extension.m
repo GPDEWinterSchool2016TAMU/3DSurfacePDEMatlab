@@ -15,7 +15,7 @@ function [ p ] = function_extension( x )
 %     p = [nx3] vector of n points on Torus
 
 R=1.0; r=0.6;
-value1 = sqrt(x(:,1).^2+x(:,2).^2);
+value1 = sqrt(x(:,1).^2+x(:,2).^2)+1e-10;
 value2 = value1-R;
 value3 = sqrt(value2.^2+x(:,3).^2);
 dist_value = value3 - r;
@@ -26,9 +26,9 @@ dist_grad(:,1)=x(:,1).*value4;
 dist_grad(:,2)=x(:,2).*value4;
 dist_grad(:,3)=x(:,3)./value3;
 
-p = x-diag(dist_value)*dist_grad;  % want nx3 matrix result so diagonalize
+n = length(dist_value);
+p = x-spdiags(dist_value,0,n,n)*dist_grad;  % want nx3 matrix result so diagonalize
                                    % the column vector dist_value to
                                    % preserve proper sizes in multiplication.
 
 end
-
